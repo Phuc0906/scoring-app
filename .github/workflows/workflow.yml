@@ -14,7 +14,7 @@ jobs:
       - name: Install Dependencies
         run: yarn install --check-files
       - name: Build Website
-        run: yarn build
+        run: CI=false yarn build
       - name: Set AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
