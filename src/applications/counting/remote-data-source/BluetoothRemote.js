@@ -33,7 +33,14 @@ const startListeningDevice = async (callback) => {
     }
 }
 
+const testKeyboardEvent = async (callback) => {
+    document.addEventListener("keydown", function(event) {
+        callback(event.key);
+    });
+};
+
 export const BluetoothRemote = {
     connectBluetoothDevice,
-    startListeningDevice
+    startListeningDevice,
+    testKeyboardEvent
 };

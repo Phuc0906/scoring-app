@@ -66,11 +66,57 @@ export const useViewModel = () => {
         }
     }
 
+    const handleTestKeyHandle = (event: string) => {
+        const teamAkeys = ['1', '2', '3', '4'];
+        const teamBkeys = ['6', '7', '8', '9'];
+        if (teamAkeys.includes(event)) {
+            setTeamAScore((prevScore) => {
+                let tmpScore = [...prevScore];
+                const currentSum = Utils.countSum(tmpScore) + teamAkeys.indexOf(event) + 1;
+                setTeamASelect(teamAkeys.indexOf(event) + 1);
+                if (currentSum > randomNumber) {
+                    tmpScore = [];
+                } else if (currentSum === randomNumber) {
+                    prevScore = [];
+                    setTeamARecord(prevScore => prevScore + 1);
+                    requestRandomNumber();
+                    resetTeamsScore();
+                } else {
+                    tmpScore.push(teamAkeys.indexOf(event) + 1);
+                }
+                return tmpScore;
+            });
+        }
+
+        if (teamBkeys.includes(event)) {
+            setTeamBScore((prevScore) => {
+                let tmpScore = [...prevScore];
+                const currentSum = Utils.countSum(tmpScore) + teamBkeys.indexOf(event) + 1;
+                setTeamBSelect(teamBkeys.indexOf(event) + 1);
+                if (currentSum > randomNumber) {
+                    console.log('Resetting team B score due to greater');
+                    tmpScore = [];
+                } else if (currentSum === randomNumber) {
+                    console.log('Resetting team B score due to correct');
+                    tmpScore = [];
+                    setTeamBRecord(prevScore => prevScore + 1);
+                    requestRandomNumber();
+                    resetTeamsScore();
+                } else {
+                    console.log('increase team B');
+                    tmpScore.push(teamBkeys.indexOf(event) + 1);
+                }
+                return tmpScore;
+            });
+        }
+    }
+
     useEffect(() => {
         const reConnect = async () => {
             await BluetoothRemote.startListeningDevice(handleValueOnChange);
         };
         reConnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isStartTimer, teamAScore, teamBScore, teamBSelect, teamASelect, teamARecord, teamBRecord]);
 
     useEffect(() => {
@@ -84,52 +130,12 @@ export const useViewModel = () => {
             if (event.key === 'Q') {
                 await BluetoothRemote.connectBluetoothDevice();
                 await BluetoothRemote.startListeningDevice(handleValueOnChange);
-
+                // BluetoothRemote.testKeyboardEvent(handleTestKeyHandle);
             }
             if (!isStartTimer) {
                 return;
             }
-            // Team A checking
-            // if (teamAkeys.includes(event.key)) {
-            //     setTeamAScore((prevScore) => {
-            //         let tmpScore = [...prevScore];
-            //         const currentSum = Utils.countSum(tmpScore) + teamAkeys.indexOf(event.key) + 1;
-            //         setTeamASelect(teamAkeys.indexOf(event.key) + 1);
-            //         if (currentSum > randomNumber) {
-            //             tmpScore = [];
-            //         } else if (currentSum === randomNumber) {
-            //             prevScore = [];
-            //             setTeamARecord(prevScore => prevScore + 1);
-            //             requestRandomNumber();
-            //             resetTeamsScore();
-            //         } else {
-            //             tmpScore.push(teamAkeys.indexOf(event.key) + 1);
-            //         }
-            //         return tmpScore;
-            //     });
-            // }
-
-            // if (teamBkeys.includes(event.key)) {
-            //     setTeamBScore((prevScore) => {
-            //         let tmpScore = [...prevScore];
-            //         const currentSum = Utils.countSum(tmpScore) + teamBkeys.indexOf(event.key) + 1;
-            //         setTeamBSelect(teamBkeys.indexOf(event.key) + 1);
-            //         if (currentSum > randomNumber) {
-            //             console.log('Resetting team B score due to greater');
-            //             tmpScore = [];
-            //         } else if (currentSum === randomNumber) {
-            //             console.log('Resetting team B score due to correct');
-            //             tmpScore = [];
-            //             setTeamBRecord(prevScore => prevScore + 1);
-            //             requestRandomNumber();
-            //             resetTeamsScore();
-            //         } else {
-            //             console.log('increase team B');
-            //             tmpScore.push(teamBkeys.indexOf(event.key) + 1);
-            //         }
-            //         return tmpScore;
-            //     });
-            // }
+            
             
         };
 
@@ -138,6 +144,7 @@ export const useViewModel = () => {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [isStartTimer, randomNumber, textDecoder]);
 
     useEffect(() => {

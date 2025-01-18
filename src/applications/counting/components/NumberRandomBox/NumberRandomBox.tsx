@@ -7,7 +7,7 @@ type NumberRandomBoxProps = {
 const NumberRandomBox = (props: NumberRandomBoxProps) => {
     const { number } = props;
 
-    return <div style={{fontSize: "15rem"}}>
+    return <div className="text-yellow-600" style={{fontSize: "15rem"}}>
         <label>{number}</label>
     </div>
 };
