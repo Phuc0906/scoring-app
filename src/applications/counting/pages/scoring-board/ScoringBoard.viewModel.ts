@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Utils } from "../../utils/utils";
 import { BluetoothRemote } from "../../remote-data-source/BluetoothRemote";
 
@@ -14,171 +14,165 @@ export const useViewModel = () => {
     const [teamBRecord, setTeamBRecord] = useState<number>(0);
     const [teamASelect, setTeamASelect] = useState<number>(0);
     const [teamBSelect, setTeamBSelect] = useState<number>(0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    let textDecoder = new TextDecoder('utf-8');
+    const textDecoder = useRef(new TextDecoder("utf-8"));
+
+    // Refs to store the latest state
+    const isStartTimerRef = useRef(isStartTimer);
+    const randomNumberRef = useRef(randomNumber);
+    const teamAScoreRef = useRef(teamAScore);
+    const teamBScoreRef = useRef(teamBScore);
+    const teamARecordRef = useRef(teamARecord);
+    const teamBRecordRef = useRef(teamBRecord);
+    const teamASelectRef = useRef(teamASelect);
+    const teamBSelectRef = useRef(teamBSelect);
+
+    // Update refs whenever the state changes
+    useEffect(() => {
+        isStartTimerRef.current = isStartTimer;
+    }, [isStartTimer]);
+
+    useEffect(() => {
+        randomNumberRef.current = randomNumber;
+    }, [randomNumber]);
+
+    useEffect(() => {
+        teamAScoreRef.current = teamAScore;
+    }, [teamAScore]);
+
+    useEffect(() => {
+        teamBScoreRef.current = teamBScore;
+    }, [teamBScore]);
+
+    useEffect(() => {
+        teamARecordRef.current = teamARecord;
+    }, [teamARecord]);
+
+    useEffect(() => {
+        teamBRecordRef.current = teamBRecord;
+    }, [teamBRecord]);
+
+    useEffect(() => {
+        teamASelectRef.current = teamASelect;
+    }, [teamASelect]);
+
+    useEffect(() => {
+        teamBSelectRef.current = teamBSelect;
+    }, [teamBSelect]);
 
     const handleValueOnChange = (event: any) => {
-        console.log('value on change: ', event);
-        console.log(textDecoder.decode(event));
-        const side = textDecoder.decode(event).split(':')[0];
-        const selectPoint = textDecoder.decode(event).split(':')[1];
-        if (!isStartTimer) {
+        console.log("value on change: ", event);
+        const decodedValue = textDecoder.current.decode(event); // Use the `textDecoder` ref
+        const [side, selectPoint] = decodedValue.split(":");
+        const point = parseInt(selectPoint) + 1;
+    
+        // Check if the timer is active using the ref
+        if (!isStartTimerRef.current) {
             return;
         }
-        if (side === 'A') {
-            console.log(`Received side: A and point: ${parseInt(selectPoint) + 1}`);
-            setTeamAScore((prevScore) => {
-                let tmpScore = [...prevScore];
-                const currentSum = Utils.countSum(tmpScore) + parseInt(selectPoint) + 1;
-                console.log('computed score: ', currentSum);
-                setTeamASelect(parseInt(selectPoint) + 1);
-                if (currentSum > randomNumber) {
-                    tmpScore = [];
-                } else if (currentSum === randomNumber) {
-                    tmpScore = [];
-                    setTeamARecord(prevScore => prevScore + 1);
-                    requestRandomNumber();
-                    resetTeamsScore();
-                } else {
-                    console.log('append score')
-                    tmpScore.push(parseInt(selectPoint) + 1);
-                }
-                return tmpScore;
-            });
-        } else {
-            console.log(`Received side: B and point: ${parseInt(selectPoint) + 1}`);
-            setTeamBScore((prevScore) => {
-                let tmpScore = [...prevScore];
-                const currentSum = Utils.countSum(tmpScore) + parseInt(selectPoint) + 1;
-                setTeamBSelect(parseInt(selectPoint) + 1);
-                if (currentSum > randomNumber) {
-                    tmpScore = [];
-                } else if (currentSum === randomNumber) {
-                    tmpScore = [];
-                    setTeamBRecord(prevScore => prevScore + 1);
-                    requestRandomNumber();
-                    resetTeamsScore();
-                } else {
-                    tmpScore.push(parseInt(selectPoint) + 1);
-                }
-                return tmpScore;
-            });
+    
+        if (side === "A") {
+            console.log(`Received side: A and point: ${point}`);
+    
+            const tmpScore = [...teamAScoreRef.current]; // Use the ref for team A's current score
+            const currentSum = Utils.countSum(tmpScore) + point;
+    
+            teamASelectRef.current = point; // Update ref for team A selection
+            setTeamASelect(point); // Update state for UI rendering
+    
+            if (currentSum > randomNumberRef.current) {
+                teamAScoreRef.current = []; // Reset ref value for team A's score
+                setTeamAScore([]); // Update state
+            } else if (currentSum === randomNumberRef.current) {
+                teamAScoreRef.current = []; // Reset ref value for team A's score
+                setTeamARecord((prev) => {
+                    const newRecord = prev + 1;
+                    teamARecordRef.current = newRecord; // Update ref
+                    return newRecord;
+                });
+                requestRandomNumber(); // Generate new random number
+                resetTeamsScore(); // Reset scores
+            } else {
+                tmpScore.push(point);
+                teamAScoreRef.current = tmpScore; // Update ref
+                setTeamAScore(tmpScore); // Update state
+            }
+        } else if (side === "B") {
+            console.log(`Received side: B and point: ${point}`);
+    
+            const tmpScore = [...teamBScoreRef.current]; // Use the ref for team B's current score
+            const currentSum = Utils.countSum(tmpScore) + point;
+    
+            teamBSelectRef.current = point; // Update ref for team B selection
+            setTeamBSelect(point); // Update state for UI rendering
+    
+            if (currentSum > randomNumberRef.current) {
+                teamBScoreRef.current = []; // Reset ref value for team B's score
+                setTeamBScore([]); // Update state
+            } else if (currentSum === randomNumberRef.current) {
+                teamBScoreRef.current = []; // Reset ref value for team B's score
+                setTeamBRecord((prev) => {
+                    const newRecord = prev + 1;
+                    teamBRecordRef.current = newRecord; // Update ref
+                    return newRecord;
+                });
+                requestRandomNumber(); // Generate new random number
+                resetTeamsScore(); // Reset scores
+            } else {
+                tmpScore.push(point);
+                teamBScoreRef.current = tmpScore; // Update ref
+                setTeamBScore(tmpScore); // Update state
+            }
         }
-    }
-
-    const handleTestKeyHandle = (event: string) => {
-        const teamAkeys = ['1', '2', '3', '4'];
-        const teamBkeys = ['6', '7', '8', '9'];
-        if (teamAkeys.includes(event)) {
-            setTeamAScore((prevScore) => {
-                let tmpScore = [...prevScore];
-                const currentSum = Utils.countSum(tmpScore) + teamAkeys.indexOf(event) + 1;
-                setTeamASelect(teamAkeys.indexOf(event) + 1);
-                if (currentSum > randomNumber) {
-                    tmpScore = [];
-                } else if (currentSum === randomNumber) {
-                    prevScore = [];
-                    setTeamARecord(prevScore => prevScore + 1);
-                    requestRandomNumber();
-                    resetTeamsScore();
-                } else {
-                    tmpScore.push(teamAkeys.indexOf(event) + 1);
-                }
-                return tmpScore;
-            });
-        }
-
-        if (teamBkeys.includes(event)) {
-            setTeamBScore((prevScore) => {
-                let tmpScore = [...prevScore];
-                const currentSum = Utils.countSum(tmpScore) + teamBkeys.indexOf(event) + 1;
-                setTeamBSelect(teamBkeys.indexOf(event) + 1);
-                if (currentSum > randomNumber) {
-                    console.log('Resetting team B score due to greater');
-                    tmpScore = [];
-                } else if (currentSum === randomNumber) {
-                    console.log('Resetting team B score due to correct');
-                    tmpScore = [];
-                    setTeamBRecord(prevScore => prevScore + 1);
-                    requestRandomNumber();
-                    resetTeamsScore();
-                } else {
-                    console.log('increase team B');
-                    tmpScore.push(teamBkeys.indexOf(event) + 1);
-                }
-                return tmpScore;
-            });
-        }
-    }
+    };
 
     useEffect(() => {
         const reConnect = async () => {
             await BluetoothRemote.startListeningDevice(handleValueOnChange);
         };
         reConnect();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isStartTimer, teamAScore, teamBScore, teamBSelect, teamASelect, teamARecord, teamBRecord]);
+    }, []);
 
     useEffect(() => {
-
         const handleKeyDown = async (event: KeyboardEvent) => {
-            const teamAkeys = ['1', '2', '3', '4'];
-            const teamBkeys = ['6', '7', '8', '9'];
-            if (event.key === 'P') {
+            if (event.key === "P") {
                 resetGame();
-            }
-            if (event.key === 'Q') {
+            } else if (event.key === "Q") {
                 await BluetoothRemote.connectBluetoothDevice();
                 await BluetoothRemote.startListeningDevice(handleValueOnChange);
-                // BluetoothRemote.testKeyboardEvent(handleTestKeyHandle);
             }
-            if (!isStartTimer) {
-                return;
-            }
-            
-            
         };
 
-        window.addEventListener('keydown', handleKeyDown);
+        window.addEventListener("keydown", handleKeyDown);
 
         return () => {
-            window.removeEventListener('keydown', handleKeyDown);
+            window.removeEventListener("keydown", handleKeyDown);
         };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isStartTimer, randomNumber, textDecoder]);
+    }, []);
 
     useEffect(() => {
         let timer: NodeJS.Timeout | undefined = undefined;
         if (isStartTimer) {
             requestRandomNumber();
             timer = setInterval(() => {
-                setCount((prevCount) => {
-                  if (prevCount < 1) {
-                    setIsStartTimer(false); // Stop counting if target is reached
-                    return prevCount;
-                  }
-                  return prevCount - 1; // Increment count
-                });
+                setCount((prevCount) => (prevCount < 1 ? 0 : prevCount - 1));
             }, 1000);
-        } else {
-            console.log("Timer stopped");
         }
         return () => {
-            if (timer) clearInterval(timer); // Cleanup timer on unmount or stop
+            if (timer) clearInterval(timer);
         };
     }, [isStartTimer]);
 
     const increaseCounter = () => {
-        setCount((prevCount) => prevCount + 1);
+        setCount((prev) => prev + 1);
     };
 
     const decreaseCounter = () => {
-        setCount((prevCount) => prevCount - 1);
+        setCount((prev) => prev - 1);
     };
 
     const onTriggerTimer = () => {
-        setIsStartTimer(!isStartTimer);
-    }
+        setIsStartTimer((prev) => !prev);
+    };
 
     const requestRandomNumber = () => {
         setRandomNumber(Math.floor(Math.random() * 10) + 1);
@@ -190,8 +184,7 @@ export const useViewModel = () => {
     };
 
     const resetGame = () => {
-        const confirmed = window.confirm("Bạn có chắc là muốn reset game không?");
-        if (confirmed) {
+        if (window.confirm("Bạn có chắc là muốn reset game không?")) {
             setCount(DEFAULT_COUNTER);
             setIsStartTimer(false);
             setRandomNumber(0);
@@ -200,7 +193,7 @@ export const useViewModel = () => {
             setTeamARecord(0);
             setTeamBRecord(0);
         }
-    }
+    };
 
     return {
         selectors: {
@@ -218,6 +211,6 @@ export const useViewModel = () => {
             increaseCounter,
             decreaseCounter,
             onTriggerTimer,
-        }
-    }
-}
+        },
+    };
+};
