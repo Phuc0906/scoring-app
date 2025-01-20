@@ -23,7 +23,7 @@ const connectBluetoothDevice = async () => {
 
 const startListeningDevice = async (callback) => {
     try {
-        await btSppCharacteristic.writeValueWithoutResponse(textEncoder.encode('B\n'));
+        await btSppCharacteristic.writeValue(textEncoder.encode('B\n'));
     await btSppCharacteristic.startNotifications();
     btSppCharacteristic.addEventListener('characteristicvaluechanged', (event) => {
         callback(event.target.value);
